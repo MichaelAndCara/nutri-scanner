@@ -10,9 +10,9 @@ import { NutritionResult, NutrientInfo } from '../models/nutrition.model';
 //   public/tesseract/tesseract-core-simd.wasm.js — WASM core (SIMD build)
 //   public/tessdata/eng.traineddata.gz      — English trained model (~11 MB)
 // ---------------------------------------------------------------------------
-const LOCAL_WORKER_PATH = 'nutri-scanner/tesseract/worker.min.js';
-const LOCAL_CORE_PATH = 'nutri-scanner/tesseract/tesseract-core-simd.wasm.js';
-const LOCAL_LANG_PATH = 'nutri-scanner/tessdata';   // tesseract.js appends /eng.traineddata.gz
+const LOCAL_WORKER_PATH = '/tesseract/worker.min.js';
+const LOCAL_CORE_PATH = '/tesseract/tesseract-core-simd.wasm.js';
+const LOCAL_LANG_PATH = '/tessdata';   // tesseract.js appends /eng.traineddata.gz
 
 // ---------------------------------------------------------------------------
 // Nutrient extraction rules
