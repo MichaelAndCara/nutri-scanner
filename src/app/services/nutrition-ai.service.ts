@@ -10,9 +10,9 @@ import { NutritionResult, NutrientInfo } from '../models/nutrition.model';
 //   public/tesseract/tesseract-core-simd.wasm.js — WASM core (SIMD build)
 //   public/tessdata/eng.traineddata.gz      — English trained model (~11 MB)
 // ---------------------------------------------------------------------------
-const LOCAL_WORKER_PATH  = '/tesseract/worker.min.js';
-const LOCAL_CORE_PATH    = '/tesseract/tesseract-core-simd.wasm.js';
-const LOCAL_LANG_PATH    = '/tessdata';   // tesseract.js appends /eng.traineddata.gz
+const LOCAL_WORKER_PATH = 'nutri-scanner/tesseract/worker.min.js';
+const LOCAL_CORE_PATH = 'nutri-scanner/tesseract/tesseract-core-simd.wasm.js';
+const LOCAL_LANG_PATH = 'nutri-scanner/tessdata';   // tesseract.js appends /eng.traineddata.gz
 
 // ---------------------------------------------------------------------------
 // Nutrient extraction rules
@@ -26,20 +26,20 @@ interface NutrientRule {
 }
 
 const NUTRIENT_RULES: NutrientRule[] = [
-  { label: 'Total Fat',          pattern: /total\s*fat\s+([\d.]+)\s*g/i,              unit: 'g',   highlight: true,  dvRef: 78   },
-  { label: 'Saturated Fat',      pattern: /saturated\s*fat\s+([\d.]+)\s*g/i,           unit: 'g',   highlight: false, dvRef: 20   },
-  { label: 'Trans Fat',          pattern: /trans\s*fat\s+([\d.]+)\s*g/i,               unit: 'g',   highlight: false, dvRef: null },
-  { label: 'Cholesterol',        pattern: /cholesterol\s+([\d.]+)\s*mg/i,              unit: 'mg',  highlight: false, dvRef: 300  },
-  { label: 'Sodium',             pattern: /sodium\s+([\d.]+)\s*mg/i,                   unit: 'mg',  highlight: true,  dvRef: 2300 },
-  { label: 'Total Carbohydrate', pattern: /total\s*carb(?:ohydrate)?\s+([\d.]+)\s*g/i, unit: 'g',  highlight: true,  dvRef: 275  },
-  { label: 'Dietary Fiber',      pattern: /dietary\s*fiber\s+([\d.]+)\s*g/i,           unit: 'g',   highlight: false, dvRef: 28   },
-  { label: 'Total Sugars',       pattern: /total\s*sugars?\s+([\d.]+)\s*g/i,           unit: 'g',   highlight: false, dvRef: null },
-  { label: 'Added Sugars',       pattern: /added\s*sugars?\s+([\d.]+)\s*g/i,           unit: 'g',   highlight: false, dvRef: 50   },
-  { label: 'Protein',            pattern: /protein\s+([\d.]+)\s*g/i,                   unit: 'g',   highlight: true,  dvRef: 50   },
-  { label: 'Vitamin D',          pattern: /vitamin\s*d\s+([\d.]+)\s*mc?g/i,            unit: 'mcg', highlight: false, dvRef: 20   },
-  { label: 'Calcium',            pattern: /calcium\s+([\d.]+)\s*mg/i,                  unit: 'mg',  highlight: false, dvRef: 1300 },
-  { label: 'Iron',               pattern: /iron\s+([\d.]+)\s*mg/i,                     unit: 'mg',  highlight: false, dvRef: 18   },
-  { label: 'Potassium',          pattern: /potassium\s+([\d.]+)\s*mg/i,                unit: 'mg',  highlight: false, dvRef: 4700 },
+  { label: 'Total Fat', pattern: /total\s*fat\s+([\d.]+)\s*g/i, unit: 'g', highlight: true, dvRef: 78 },
+  { label: 'Saturated Fat', pattern: /saturated\s*fat\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: 20 },
+  { label: 'Trans Fat', pattern: /trans\s*fat\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: null },
+  { label: 'Cholesterol', pattern: /cholesterol\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: false, dvRef: 300 },
+  { label: 'Sodium', pattern: /sodium\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: true, dvRef: 2300 },
+  { label: 'Total Carbohydrate', pattern: /total\s*carb(?:ohydrate)?\s+([\d.]+)\s*g/i, unit: 'g', highlight: true, dvRef: 275 },
+  { label: 'Dietary Fiber', pattern: /dietary\s*fiber\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: 28 },
+  { label: 'Total Sugars', pattern: /total\s*sugars?\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: null },
+  { label: 'Added Sugars', pattern: /added\s*sugars?\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: 50 },
+  { label: 'Protein', pattern: /protein\s+([\d.]+)\s*g/i, unit: 'g', highlight: true, dvRef: 50 },
+  { label: 'Vitamin D', pattern: /vitamin\s*d\s+([\d.]+)\s*mc?g/i, unit: 'mcg', highlight: false, dvRef: 20 },
+  { label: 'Calcium', pattern: /calcium\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: false, dvRef: 1300 },
+  { label: 'Iron', pattern: /iron\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: false, dvRef: 18 },
+  { label: 'Potassium', pattern: /potassium\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: false, dvRef: 4700 },
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -56,8 +56,8 @@ export class NutritionAiService {
 
     this.worker = await createWorker('eng', 1, {
       workerPath: LOCAL_WORKER_PATH,
-      corePath:   LOCAL_CORE_PATH,
-      langPath:   LOCAL_LANG_PATH,
+      corePath: LOCAL_CORE_PATH,
+      langPath: LOCAL_LANG_PATH,
       // Disable all logging in production; flip to console.log for debugging
       logger: () => { /* silent */ },
     });
@@ -69,23 +69,23 @@ export class NutritionAiService {
     const worker = await this.getWorker();
     const { data } = await worker.recognize(imageDataUrl);
 
-    const rawText       = data.text;
+    const rawText = data.text;
     const ocrConfidence = data.confidence; // 0–100
 
     const confidence: 'high' | 'medium' | 'low' =
       ocrConfidence >= 70 ? 'high' :
-      ocrConfidence >= 40 ? 'medium' : 'low';
+        ocrConfidence >= 40 ? 'medium' : 'low';
 
     return {
-      id:                  crypto.randomUUID(),
-      timestamp:           new Date(),
+      id: crypto.randomUUID(),
+      timestamp: new Date(),
       imageDataUrl,
-      productName:         this.parseProductName(rawText),
-      servingSize:         this.parseServingSize(rawText),
-      servingsPerContainer:this.parseServingsPerContainer(rawText),
-      calories:            this.parseCalories(rawText),
-      caloriesFromFat:     this.parseCaloriesFromFat(rawText),
-      nutrients:           this.parseNutrients(rawText),
+      productName: this.parseProductName(rawText),
+      servingSize: this.parseServingSize(rawText),
+      servingsPerContainer: this.parseServingsPerContainer(rawText),
+      calories: this.parseCalories(rawText),
+      caloriesFromFat: this.parseCaloriesFromFat(rawText),
+      nutrients: this.parseNutrients(rawText),
       rawText,
       confidence,
     };
@@ -118,10 +118,10 @@ export class NutritionAiService {
   private parseProductName(text: string): string {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     for (const line of lines) {
-      if (/nutrition\s*facts/i.test(line))           continue;
+      if (/nutrition\s*facts/i.test(line)) continue;
       if (/serving|calories|amount|daily\s*value/i.test(line)) continue;
-      if (/^\d/.test(line))                          continue;
-      if (line.length >= 4 && line.length <= 60)     return line;
+      if (/^\d/.test(line)) continue;
+      if (line.length >= 4 && line.length <= 60) return line;
     }
     return 'Nutrition Facts';
   }
@@ -131,9 +131,9 @@ export class NutritionAiService {
       const m = text.match(rule.pattern);
       if (!m) return acc;
 
-      const value  = parseFloat(m[1]);
-      const dvPct  = this.extractPrintedDvPct(text, rule.label)
-                     ?? (rule.dvRef != null ? Math.round((value / rule.dvRef) * 100) : null);
+      const value = parseFloat(m[1]);
+      const dvPct = this.extractPrintedDvPct(text, rule.label)
+        ?? (rule.dvRef != null ? Math.round((value / rule.dvRef) * 100) : null);
 
       acc.push({ label: rule.label, value, unit: rule.unit, dailyPct: dvPct, highlight: rule.highlight });
       return acc;
@@ -147,7 +147,7 @@ export class NutritionAiService {
   private extractPrintedDvPct(text: string, label: string): number | undefined {
     const escaped = label.replace(/\s+/g, '\\s+');
     const re = new RegExp(escaped + '[^\\n]{0,40}(\\d+)\\s*%', 'i');
-    const m  = text.match(re);
+    const m = text.match(re);
     return m ? parseInt(m[1], 10) : undefined;
   }
 
