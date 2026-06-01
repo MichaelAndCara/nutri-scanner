@@ -5,7 +5,6 @@
   "projects": {
     "nutri-scanner": {
       "projectType": "application",
-      "schematics": {},
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
@@ -14,47 +13,31 @@
           "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "dist/nutri-scanner",
-            "index": "src/index.html",
-            "browser": "src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
-            "tsConfig": "tsconfig.app.json",
+            "index":      "src/index.html",
+            "browser":    "src/main.ts",
+            "polyfills":  ["zone.js"],
+            "tsConfig":   "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public/tesseract",
+                "output": "tesseract"
               },
               {
                 "glob": "**/*",
-                "input": "node_modules/tesseract.js/dist/",
-                "output": "/assets/tesseract/"
-              },
-              {
-                "glob": "**/*",
-                "input": "node_modules/tesseract.js-core/",
-                "output": "/assets/tesseract/"
+                "input": "public/tessdata",
+                "output": "tessdata"
               }
             ],
-            "styles": [
-              "src/styles.scss"
-            ],
+            "styles":  ["src/styles.scss"],
             "scripts": []
           },
           "configurations": {
             "production": {
               "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
+                { "type": "initial",          "maximumWarning": "2MB", "maximumError": "5MB" },
+                { "type": "anyComponentStyle","maximumWarning": "8kB", "maximumError": "16kB" }
               ],
               "outputHashing": "all"
             },
@@ -69,19 +52,12 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "production": {
-              "buildTarget": "nutri-scanner:build:production"
-            },
-            "development": {
-              "buildTarget": "nutri-scanner:build:development"
-            }
+            "production":  { "buildTarget": "nutri-scanner:build:production"  },
+            "development": { "buildTarget": "nutri-scanner:build:development" }
           },
           "defaultConfiguration": "development"
         }
       }
     }
-  },
-  "cli": {
-    "analytics": false
   }
 }

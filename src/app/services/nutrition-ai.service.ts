@@ -3,82 +3,89 @@ import { createWorker, Worker } from 'tesseract.js';
 import { NutritionResult, NutrientInfo } from '../models/nutrition.model';
 
 // ---------------------------------------------------------------------------
-// Nutrient extraction rules: [label, regex, unit, highlight, dailyValueRef]
-// dailyValueRef is the FDA reference amount used to compute % DV (or null)
+// All paths point to files bundled inside the Angular app under /public/.
+// No CDN or external network request is made at runtime.
+//
+//   public/tesseract/worker.min.js          — Tesseract worker script
+//   public/tesseract/tesseract-core-simd.wasm.js — WASM core (SIMD build)
+//   public/tessdata/eng.traineddata.gz      — English trained model (~11 MB)
+// ---------------------------------------------------------------------------
+const LOCAL_WORKER_PATH  = '/tesseract/worker.min.js';
+const LOCAL_CORE_PATH    = '/tesseract/tesseract-core-simd.wasm.js';
+const LOCAL_LANG_PATH    = '/tessdata';   // tesseract.js appends /eng.traineddata.gz
+
+// ---------------------------------------------------------------------------
+// Nutrient extraction rules
 // ---------------------------------------------------------------------------
 interface NutrientRule {
   label: string;
   pattern: RegExp;
   unit: string;
   highlight: boolean;
-  dvRef: number | null; // grams/mg reference for % DV calculation
+  dvRef: number | null; // FDA reference amount for % DV calculation
 }
 
 const NUTRIENT_RULES: NutrientRule[] = [
-  { label: 'Total Fat', pattern: /total\s*fat\s+([\d.]+)\s*g/i, unit: 'g', highlight: true, dvRef: 78 },
-  { label: 'Saturated Fat', pattern: /saturated\s*fat\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: 20 },
-  { label: 'Trans Fat', pattern: /trans\s*fat\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: null },
-  { label: 'Cholesterol', pattern: /cholesterol\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: false, dvRef: 300 },
-  { label: 'Sodium', pattern: /sodium\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: true, dvRef: 2300 },
-  { label: 'Total Carbohydrate', pattern: /total\s*carb(?:ohydrate)?\s+([\d.]+)\s*g/i, unit: 'g', highlight: true, dvRef: 275 },
-  { label: 'Dietary Fiber', pattern: /dietary\s*fiber\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: 28 },
-  { label: 'Total Sugars', pattern: /total\s*sugars?\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: null },
-  { label: 'Added Sugars', pattern: /added\s*sugars?\s+([\d.]+)\s*g/i, unit: 'g', highlight: false, dvRef: 50 },
-  { label: 'Protein', pattern: /protein\s+([\d.]+)\s*g/i, unit: 'g', highlight: true, dvRef: 50 },
-  { label: 'Vitamin D', pattern: /vitamin\s*d\s+([\d.]+)\s*mc?g/i, unit: 'mcg', highlight: false, dvRef: 20 },
-  { label: 'Calcium', pattern: /calcium\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: false, dvRef: 1300 },
-  { label: 'Iron', pattern: /iron\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: false, dvRef: 18 },
-  { label: 'Potassium', pattern: /potassium\s+([\d.]+)\s*mg/i, unit: 'mg', highlight: false, dvRef: 4700 },
+  { label: 'Total Fat',          pattern: /total\s*fat\s+([\d.]+)\s*g/i,              unit: 'g',   highlight: true,  dvRef: 78   },
+  { label: 'Saturated Fat',      pattern: /saturated\s*fat\s+([\d.]+)\s*g/i,           unit: 'g',   highlight: false, dvRef: 20   },
+  { label: 'Trans Fat',          pattern: /trans\s*fat\s+([\d.]+)\s*g/i,               unit: 'g',   highlight: false, dvRef: null },
+  { label: 'Cholesterol',        pattern: /cholesterol\s+([\d.]+)\s*mg/i,              unit: 'mg',  highlight: false, dvRef: 300  },
+  { label: 'Sodium',             pattern: /sodium\s+([\d.]+)\s*mg/i,                   unit: 'mg',  highlight: true,  dvRef: 2300 },
+  { label: 'Total Carbohydrate', pattern: /total\s*carb(?:ohydrate)?\s+([\d.]+)\s*g/i, unit: 'g',  highlight: true,  dvRef: 275  },
+  { label: 'Dietary Fiber',      pattern: /dietary\s*fiber\s+([\d.]+)\s*g/i,           unit: 'g',   highlight: false, dvRef: 28   },
+  { label: 'Total Sugars',       pattern: /total\s*sugars?\s+([\d.]+)\s*g/i,           unit: 'g',   highlight: false, dvRef: null },
+  { label: 'Added Sugars',       pattern: /added\s*sugars?\s+([\d.]+)\s*g/i,           unit: 'g',   highlight: false, dvRef: 50   },
+  { label: 'Protein',            pattern: /protein\s+([\d.]+)\s*g/i,                   unit: 'g',   highlight: true,  dvRef: 50   },
+  { label: 'Vitamin D',          pattern: /vitamin\s*d\s+([\d.]+)\s*mc?g/i,            unit: 'mcg', highlight: false, dvRef: 20   },
+  { label: 'Calcium',            pattern: /calcium\s+([\d.]+)\s*mg/i,                  unit: 'mg',  highlight: false, dvRef: 1300 },
+  { label: 'Iron',               pattern: /iron\s+([\d.]+)\s*mg/i,                     unit: 'mg',  highlight: false, dvRef: 18   },
+  { label: 'Potassium',          pattern: /potassium\s+([\d.]+)\s*mg/i,                unit: 'mg',  highlight: false, dvRef: 4700 },
 ];
 
 @Injectable({ providedIn: 'root' })
 export class NutritionAiService {
   private worker: Worker | null = null;
 
-  /** Lazily create and cache the Tesseract worker */
+  /**
+   * Lazily initialise the Tesseract worker.
+   * All asset paths resolve to files served from the Angular app itself —
+   * no external network calls are ever made.
+   */
   private async getWorker(): Promise<Worker> {
-    if (!this.worker) {
-      this.worker = await createWorker('eng', 1, {
-        // Use CDN-hosted trained data so no local assets are needed
-        workerPath: '/assets/tesseract/worker.min.js',  //'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-        langPath: '/assets/tesseract/',  //'https://tessdata.projectnaptha.com/4.0.0',
-        corePath: '/assets/tesseract/' //'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core-simd.wasm.js',
-      });
-    }
+    if (this.worker) return this.worker;
+
+    this.worker = await createWorker('eng', 1, {
+      workerPath: LOCAL_WORKER_PATH,
+      corePath:   LOCAL_CORE_PATH,
+      langPath:   LOCAL_LANG_PATH,
+      // Disable all logging in production; flip to console.log for debugging
+      logger: () => { /* silent */ },
+    });
+
     return this.worker;
   }
 
   async analyzeImage(imageDataUrl: string): Promise<NutritionResult> {
     const worker = await this.getWorker();
-
-    // Run OCR
     const { data } = await worker.recognize(imageDataUrl);
-    const rawText = data.text;
+
+    const rawText       = data.text;
     const ocrConfidence = data.confidence; // 0–100
 
-    // Parse extracted text into structured nutrition data
-    const nutrients = this.parseNutrients(rawText);
-    const calories = this.parseCalories(rawText);
-    const caloriesFromFat = this.parseCaloriesFromFat(rawText);
-    const servingSize = this.parseServingSize(rawText);
-    const servingsPerContainer = this.parseServingsPerContainer(rawText);
-    const productName = this.parseProductName(rawText);
-
-    // Map OCR confidence (0-100) to our three-tier scale
     const confidence: 'high' | 'medium' | 'low' =
       ocrConfidence >= 70 ? 'high' :
-        ocrConfidence >= 40 ? 'medium' : 'low';
+      ocrConfidence >= 40 ? 'medium' : 'low';
 
     return {
-      id: crypto.randomUUID(),
-      timestamp: new Date(),
+      id:                  crypto.randomUUID(),
+      timestamp:           new Date(),
       imageDataUrl,
-      productName,
-      servingSize,
-      servingsPerContainer,
-      calories,
-      caloriesFromFat,
-      nutrients,
+      productName:         this.parseProductName(rawText),
+      servingSize:         this.parseServingSize(rawText),
+      servingsPerContainer:this.parseServingsPerContainer(rawText),
+      calories:            this.parseCalories(rawText),
+      caloriesFromFat:     this.parseCaloriesFromFat(rawText),
+      nutrients:           this.parseNutrients(rawText),
       rawText,
       confidence,
     };
@@ -89,7 +96,6 @@ export class NutritionAiService {
   // -------------------------------------------------------------------------
 
   private parseCalories(text: string): number {
-    // "Calories 250" or "Calories\n250"
     const m = text.match(/calories\s*\n?\s*(\d+)/i);
     return m ? parseInt(m[1], 10) : 0;
   }
@@ -110,55 +116,42 @@ export class NutritionAiService {
   }
 
   private parseProductName(text: string): string {
-    // Grab the first non-empty line that looks like a product name
-    // (not "Nutrition Facts", not a number-heavy line)
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     for (const line of lines) {
-      if (/nutrition\s*facts/i.test(line)) continue;
+      if (/nutrition\s*facts/i.test(line))           continue;
       if (/serving|calories|amount|daily\s*value/i.test(line)) continue;
-      if (/^\d/.test(line)) continue;
-      if (line.length >= 4 && line.length <= 60) return line;
+      if (/^\d/.test(line))                          continue;
+      if (line.length >= 4 && line.length <= 60)     return line;
     }
     return 'Nutrition Facts';
   }
 
   private parseNutrients(text: string): NutrientInfo[] {
-    const results: NutrientInfo[] = [];
-
-    for (const rule of NUTRIENT_RULES) {
+    return NUTRIENT_RULES.reduce<NutrientInfo[]>((acc, rule) => {
       const m = text.match(rule.pattern);
-      if (!m) continue;
+      if (!m) return acc;
 
-      const value = parseFloat(m[1]);
-      // Try to extract the % DV that OCR found on the same/adjacent line
-      const dvPct = this.extractDvPct(text, rule.label) ??
-        (rule.dvRef != null ? Math.round((value / rule.dvRef) * 100) : undefined);
+      const value  = parseFloat(m[1]);
+      const dvPct  = this.extractPrintedDvPct(text, rule.label)
+                     ?? (rule.dvRef != null ? Math.round((value / rule.dvRef) * 100) : null);
 
-      results.push({
-        label: rule.label,
-        value,
-        unit: rule.unit,
-        dailyPct: dvPct ?? undefined,
-        highlight: rule.highlight,
-      });
-    }
-
-    return results;
+      acc.push({ label: rule.label, value, unit: rule.unit, dailyPct: dvPct, highlight: rule.highlight });
+      return acc;
+    }, []);
   }
 
   /**
-   * Try to find the "XX%" that follows a nutrient name on OCR text.
-   * Nutrition labels put % DV on the same logical line, but OCR may split it.
+   * Try to find a printed "XX%" that immediately follows a nutrient name on
+   * the OCR text (nutrition labels place % DV on the same logical line).
    */
-  private extractDvPct(text: string, label: string): number | undefined {
-    // Build a lookahead pattern: label ... <number>%
+  private extractPrintedDvPct(text: string, label: string): number | undefined {
     const escaped = label.replace(/\s+/g, '\\s+');
     const re = new RegExp(escaped + '[^\\n]{0,40}(\\d+)\\s*%', 'i');
-    const m = text.match(re);
+    const m  = text.match(re);
     return m ? parseInt(m[1], 10) : undefined;
   }
 
-  /** Clean up the Tesseract worker when the app closes */
+  /** Call this from the component's ngOnDestroy to free the WASM worker. */
   async destroy(): Promise<void> {
     await this.worker?.terminate();
     this.worker = null;

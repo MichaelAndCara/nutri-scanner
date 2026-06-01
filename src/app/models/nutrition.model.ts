@@ -2,7 +2,7 @@ export interface NutrientInfo {
   label: string;
   value: number;
   unit: string;
-  dailyPct?: number;
+  dailyPct?: number | null;
   highlight?: boolean;
 }
 

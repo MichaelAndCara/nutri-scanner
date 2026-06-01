@@ -8,79 +8,57 @@ import { NutritionResult, NutrientInfo } from '../../models/nutrition.model';
   imports: [CommonModule],
   template: `
     <div class="results-card">
-      <div class="results-header">
-        <div class="product-info">
-          <div class="confidence-badge" [class]="result.confidence">
-            {{ confidenceLabel }}
-          </div>
-          <h2 class="product-name">{{ result.productName }}</h2>
-          <p class="serving-info">
+      <div class="res-head">
+        <div>
+          <div class="conf-badge" [class]="result.confidence">{{ confLabel }}</div>
+          <h2 class="prod-name">{{ result.productName }}</h2>
+          <p class="serving">
             Serving: <strong>{{ result.servingSize }}</strong>
-            @if (result.servingsPerContainer) {
-              · {{ result.servingsPerContainer }} servings/container
-            }
+            @if (result.servingsPerContainer) { · {{ result.servingsPerContainer }} servings/container }
           </p>
         </div>
-        <button class="close-btn" (click)="cleared.emit()" aria-label="Close">✕</button>
+        <button class="close-btn" (click)="cleared.emit()">✕</button>
       </div>
 
-      <div class="calories-hero">
-        <div class="calories-main">
-          <span class="calories-label">Calories</span>
-          <span class="calories-value">{{ result.calories }}</span>
-          @if (result.caloriesFromFat) {
-            <span class="calories-sub">{{ result.caloriesFromFat }} from fat</span>
-          }
+      <div class="cal-hero">
+        <div class="cal-row">
+          <span class="cal-lbl">Calories</span>
+          <span class="cal-val">{{ result.calories }}</span>
+          @if (result.caloriesFromFat) { <span class="cal-sub">{{ result.caloriesFromFat }} from fat</span> }
         </div>
-        <div class="calorie-bar">
-          <div
-            class="calorie-fill"
-            [style.width.%]="caloriePercent"
-            [class]="calorieLevel"
-          ></div>
-        </div>
-        <p class="calorie-context">{{ calorieContext }}</p>
+        <div class="cal-track"><div class="cal-fill" [class]="calLevel" [style.width.%]="calPct"></div></div>
+        <p class="cal-ctx">{{ Math.round(calPct) }}% of a 2,000 cal daily value</p>
       </div>
 
-      <div class="highlights-grid">
+      <div class="hi-grid">
         @for (n of highlights; track n.label) {
-          <div class="highlight-card">
-            <span class="nutrient-label">{{ n.label }}</span>
-            <span class="nutrient-value">{{ n.value }}{{ n.unit }}</span>
+          <div class="hi-card">
+            <span class="hi-lbl">{{ n.label }}</span>
+            <span class="hi-val">{{ n.value }}{{ n.unit }}</span>
             @if (n.dailyPct != null) {
-              <div class="dv-bar">
-                <div
-                  class="dv-fill"
-                  [style.width.%]="Math.min(n.dailyPct, 100)"
-                  [class]="getDvClass(n.dailyPct)"
-                ></div>
-              </div>
-              <span class="dv-label">{{ n.dailyPct }}% DV</span>
+              <div class="dv-track"><div class="dv-fill" [class]="dvClass(n.dailyPct!)" [style.width.%]="Math.min(n.dailyPct!, 100)"></div></div>
+              <span class="dv-lbl">{{ n.dailyPct }}% DV</span>
             }
           </div>
         }
       </div>
 
-      <div class="nutrients-list">
-        <h3 class="section-title">Full Nutrition Facts</h3>
+      <div class="nut-list">
+        <h3 class="sec-title">Full Nutrition Facts</h3>
         @for (n of others; track n.label) {
-          <div class="nutrient-row">
-            <span class="row-label">{{ n.label }}</span>
-            <div class="row-right">
-              <span class="row-value">{{ n.value }}{{ n.unit }}</span>
-              @if (n.dailyPct != null) {
-                <span class="row-dv">{{ n.dailyPct }}%</span>
-              }
+          <div class="nut-row">
+            <span class="nr-lbl">{{ n.label }}</span>
+            <div class="nr-right">
+              <span class="nr-val">{{ n.value }}{{ n.unit }}</span>
+              @if (n.dailyPct != null) { <span class="nr-dv">{{ n.dailyPct }}%</span> }
             </div>
           </div>
         }
       </div>
 
-      <div class="scan-footer">
+      <div class="res-footer">
         <span>{{ result.timestamp | date:'shortTime' }}</span>
-        <div class="thumbnail-wrap">
-          <img [src]="result.imageDataUrl" class="thumbnail" alt="Scanned label" />
-        </div>
+        <img [src]="result.imageDataUrl" class="thumb" alt="Scanned label" />
       </div>
     </div>
   `,
@@ -92,42 +70,12 @@ export class ResultsComponent {
 
   Math = Math;
 
-  get highlights(): NutrientInfo[] {
-    return this.result.nutrients.filter(n => n.highlight);
+  get highlights(): NutrientInfo[] { return this.result.nutrients.filter(n => n.highlight); }
+  get others():     NutrientInfo[] { return this.result.nutrients.filter(n => !n.highlight); }
+  get calPct():  number { return Math.min((this.result.calories / 2000) * 100, 100); }
+  get calLevel(): string { return this.calPct < 20 ? 'low' : this.calPct < 40 ? 'moderate' : 'high'; }
+  get confLabel(): string {
+    return { high: '✓ High confidence', medium: '~ Medium confidence', low: '! Low confidence' }[this.result.confidence];
   }
-
-  get others(): NutrientInfo[] {
-    return this.result.nutrients.filter(n => !n.highlight);
-  }
-
-  get caloriePercent(): number {
-    return Math.min((this.result.calories / 2000) * 100, 100);
-  }
-
-  get calorieLevel(): string {
-    const pct = this.caloriePercent;
-    if (pct < 20) return 'low';
-    if (pct < 40) return 'moderate';
-    return 'high';
-  }
-
-  get calorieContext(): string {
-    const pct = Math.round(this.caloriePercent);
-    return `${pct}% of a 2,000 cal daily value`;
-  }
-
-  get confidenceLabel(): string {
-    const map: Record<string, string> = {
-      high: '✓ High confidence',
-      medium: '~ Medium confidence',
-      low: '! Low confidence'
-    };
-    return map[this.result.confidence];
-  }
-
-  getDvClass(pct: number): string {
-    if (pct <= 5) return 'low';
-    if (pct <= 20) return 'moderate';
-    return 'high';
-  }
+  dvClass(pct: number): string { return pct <= 5 ? 'low' : pct <= 20 ? 'moderate' : 'high'; }
 }
