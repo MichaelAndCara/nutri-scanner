@@ -13,31 +13,43 @@
           "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "dist/nutri-scanner",
-            "index":      "src/index.html",
-            "browser":    "src/main.ts",
-            "polyfills":  ["zone.js"],
-            "tsConfig":   "tsconfig.app.json",
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
                 "input": "public/tesseract",
-                "output": "tesseract"
+                "output": "nutri-scanner/tesseract"
               },
               {
                 "glob": "**/*",
                 "input": "public/tessdata",
-                "output": "tessdata"
+                "output": "nutri-scanner/tessdata"
               }
             ],
-            "styles":  ["src/styles.scss"],
+            "styles": [
+              "src/styles.scss"
+            ],
             "scripts": []
           },
           "configurations": {
             "production": {
               "budgets": [
-                { "type": "initial",          "maximumWarning": "2MB", "maximumError": "5MB" },
-                { "type": "anyComponentStyle","maximumWarning": "8kB", "maximumError": "16kB" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "2MB",
+                  "maximumError": "5MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "8kB",
+                  "maximumError": "16kB"
+                }
               ],
               "outputHashing": "all"
             },
@@ -52,8 +64,12 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "production":  { "buildTarget": "nutri-scanner:build:production"  },
-            "development": { "buildTarget": "nutri-scanner:build:development" }
+            "production": {
+              "buildTarget": "nutri-scanner:build:production"
+            },
+            "development": {
+              "buildTarget": "nutri-scanner:build:development"
+            }
           },
           "defaultConfiguration": "development"
         },
