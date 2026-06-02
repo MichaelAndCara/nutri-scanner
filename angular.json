@@ -38,6 +38,22 @@
             "scripts": []
           },
           "configurations": {
+            "gh-pages": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2MB",
+                  "maximumError": "5MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "8kB",
+                  "maximumError": "16kB"
+                }
+              ],
+              "outputHashing": "all",
+              "baseHref": "https://michaelandcara.github.io/nutri-scanner/"
+            },
             "production": {
               "budgets": [
                 {
