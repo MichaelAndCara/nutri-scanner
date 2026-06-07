@@ -24,7 +24,7 @@
               {
                 "glob": "**/*",
                 "input": "public/tesseract",
-                "output": "nutri-scanner/tesseract"
+                "output": "nutri-scanner/public/tesseract"
               },
               {
                 "glob": "**/*",
