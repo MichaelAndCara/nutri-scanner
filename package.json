@@ -4,8 +4,7 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build",
-    "build:prod": "ng build --configuration production",
-    "build:github": "ng build -c gh-pages"
+    "build:prod": "ng build --configuration production"
   },
   "dependencies": {
     "@angular/animations": "^20.0.0",
