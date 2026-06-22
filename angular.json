@@ -23,13 +23,13 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "src/public/tesseract",
-                "output": "nutri-scanner/tesseract"
+                "input": "node_modules/tesseract.js-core",
+                "output": "/tesseract/"
               },
               {
-                "glob": "**/*",
-                "input": "public/tessdata",
-                "output": "nutri-scanner/tessdata"
+                "glob": "worker.min.js",
+                "input": "node_modules/tesseract.js/dist",
+                "output": "/tesseract/"
               }
             ],
             "styles": [
@@ -37,7 +37,8 @@
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
-              "tesseract.js"
+              "tesseract.js",
+              "worker.min.js"
             ]
           },
           "configurations": {
