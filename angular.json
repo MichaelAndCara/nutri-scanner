@@ -23,8 +23,8 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public/tesseract",
-                "output": "nutri-scanner/public/tesseract"
+                "input": "src/public/tesseract",
+                "output": "nutri-scanner/tesseract"
               },
               {
                 "glob": "**/*",
@@ -65,13 +65,16 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular/build:application",
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "buildTarget": "nutri-scanner:build"
+          },
           "configurations": {
             "production": {
-              "browserTarget": "nutri-scanner:build:production"
+              "buildTarget": "nutri-scanner:build:production"
             },
             "development": {
-              "browserTarget": "nutri-scanner:build:development"
+              "buildTarget": "nutri-scanner:build:development"
             }
           },
           "defaultConfiguration": "development"
