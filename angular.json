@@ -10,9 +10,9 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
-            "outputPath": "docs",
+            "outputPath": "dist/nutri-scanner",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -23,37 +23,25 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public/tesseract",
-                "output": "nutri-scanner/public/tesseract"
+                "input": "node_modules/tesseract.js-core",
+                "output": "/tesseract/"
               },
               {
-                "glob": "**/*",
-                "input": "public/tessdata",
-                "output": "nutri-scanner/tessdata"
+                "glob": "worker.min.js",
+                "input": "node_modules/tesseract.js/dist",
+                "output": "/tesseract/"
               }
             ],
             "styles": [
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "tesseract.js",
+              "worker.min.js"
+            ]
           },
           "configurations": {
-            "gh-pages": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "2MB",
-                  "maximumError": "5MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "8kB",
-                  "maximumError": "16kB"
-                }
-              ],
-              "outputHashing": "all",
-              "baseHref": "https://michaelandcara.github.io/nutri-scanner/"
-            },
             "production": {
               "budgets": [
                 {
@@ -78,7 +66,10 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "buildTarget": "nutri-scanner:build"
+          },
           "configurations": {
             "production": {
               "buildTarget": "nutri-scanner:build:production"
