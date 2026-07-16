@@ -1,11 +1,3 @@
-export interface NutrientInfo {
-  label: string;
-  value: number;
-  unit: string;
-  dailyPct?: number | null;
-  highlight?: boolean;
-}
-
 export interface NutritionResult {
   id: string;
   timestamp: Date;
@@ -14,8 +6,8 @@ export interface NutritionResult {
   servingSize: string;
   servingsPerContainer?: number;
   calories: number;
-  caloriesFromFat?: number;
-  nutrients: NutrientInfo[];
+  fat: number;
+  fiber: number;
   rawText?: string;
   confidence: 'high' | 'medium' | 'low';
 }

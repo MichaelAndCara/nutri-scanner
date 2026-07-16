@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NutritionResult, NutrientInfo } from '../../models/nutrition.model';
+import { NutritionResult } from '../../models/nutrition.model';
 
 @Component({
   selector: 'app-results',
@@ -11,7 +11,6 @@ import { NutritionResult, NutrientInfo } from '../../models/nutrition.model';
       <div class="res-head">
         <div>
           <div class="conf-badge" [class]="result.confidence">{{ confLabel }}</div>
-          <h2 class="prod-name">{{ result.productName }}</h2>
           <p class="serving">
             Serving: <strong>{{ result.servingSize }}</strong>
             @if (result.servingsPerContainer) { · {{ result.servingsPerContainer }} servings/container }
@@ -20,40 +19,19 @@ import { NutritionResult, NutrientInfo } from '../../models/nutrition.model';
         <button class="close-btn" (click)="cleared.emit()">✕</button>
       </div>
 
-      <div class="cal-hero">
-        <div class="cal-row">
-          <span class="cal-lbl">Calories</span>
-          <span class="cal-val">{{ result.calories }}</span>
-          @if (result.caloriesFromFat) { <span class="cal-sub">{{ result.caloriesFromFat }} from fat</span> }
-        </div>
-        <div class="cal-track"><div class="cal-fill" [class]="calLevel" [style.width.%]="calPct"></div></div>
-        <p class="cal-ctx">{{ Math.round(calPct) }}% of a 2,000 cal daily value</p>
-      </div>
-
       <div class="hi-grid">
-        @for (n of highlights; track n.label) {
           <div class="hi-card">
-            <span class="hi-lbl">{{ n.label }}</span>
-            <span class="hi-val">{{ n.value }}{{ n.unit }}</span>
-            @if (n.dailyPct != null) {
-              <div class="dv-track"><div class="dv-fill" [class]="dvClass(n.dailyPct!)" [style.width.%]="Math.min(n.dailyPct!, 100)"></div></div>
-              <span class="dv-lbl">{{ n.dailyPct }}% DV</span>
-            }
+            <span class="hi-lbl">Calories</span>
+            <span class="hi-val">{{ result.calories }}</span>
           </div>
-        }
-      </div>
-
-      <div class="nut-list">
-        <h3 class="sec-title">Full Nutrition Facts</h3>
-        @for (n of others; track n.label) {
-          <div class="nut-row">
-            <span class="nr-lbl">{{ n.label }}</span>
-            <div class="nr-right">
-              <span class="nr-val">{{ n.value }}{{ n.unit }}</span>
-              @if (n.dailyPct != null) { <span class="nr-dv">{{ n.dailyPct }}%</span> }
-            </div>
+          <div class="hi-card">
+            <span class="hi-lbl">Fat</span>
+            <span class="hi-val">{{ result.fat }}g</span>
           </div>
-        }
+          <div class="hi-card">
+            <span class="hi-lbl">Fiber</span>
+            <span class="hi-val">{{ result.fiber }}g</span>
+          </div>
       </div>
 
       <div class="res-footer">
@@ -70,9 +48,9 @@ export class ResultsComponent {
 
   Math = Math;
 
-  get highlights(): NutrientInfo[] { return this.result.nutrients.filter(n => n.highlight); }
-  get others():     NutrientInfo[] { return this.result.nutrients.filter(n => !n.highlight); }
-  get calPct():  number { return Math.min((this.result.calories / 2000) * 100, 100); }
+  // get highlights(): NutrientInfo[] { return this.result.nutrients.filter(n => n.highlight); }
+  // get others(): NutrientInfo[] { return this.result.nutrients.filter(n => !n.highlight); }
+  get calPct(): number { return Math.min((this.result.calories / 2000) * 100, 100); }
   get calLevel(): string { return this.calPct < 20 ? 'low' : this.calPct < 40 ? 'moderate' : 'high'; }
   get confLabel(): string {
     return { high: '✓ High confidence', medium: '~ Medium confidence', low: '! Low confidence' }[this.result.confidence];
