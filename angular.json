@@ -24,12 +24,12 @@
               {
                 "glob": "**/*",
                 "input": "node_modules/tesseract.js-core",
-                "output": "/tesseract/"
+                "output": "/assets/tesseract/"
               },
               {
                 "glob": "worker.min.js",
                 "input": "node_modules/tesseract.js/dist",
-                "output": "/tesseract/"
+                "output": "/assets/tesseract/"
               }
             ],
             "styles": [
