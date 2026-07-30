@@ -34,6 +34,17 @@ import { NutritionResult } from '../../models/nutrition.model';
           </div>
       </div>
 
+      @if (result.points && result.points.length) {
+        <div class="hi-grid">
+        @for (point of result.points; track point) {
+          <div class="hi-card">
+            <span class="hi-lbl">{{point.grams | number:'1.0-2'}} grams</span>
+            <span class="hi-val">{{point.points | number:'1.0-0'}} points</span>
+          </div>
+          }
+        </div>
+      }
+
       <div class="res-footer">
         <span>{{ result.timestamp | date:'shortTime' }}</span>
         <img [src]="result.imageDataUrl" class="thumb" alt="Scanned label" />
@@ -48,12 +59,9 @@ export class ResultsComponent {
 
   Math = Math;
 
-  // get highlights(): NutrientInfo[] { return this.result.nutrients.filter(n => n.highlight); }
-  // get others(): NutrientInfo[] { return this.result.nutrients.filter(n => !n.highlight); }
   get calPct(): number { return Math.min((this.result.calories / 2000) * 100, 100); }
   get calLevel(): string { return this.calPct < 20 ? 'low' : this.calPct < 40 ? 'moderate' : 'high'; }
   get confLabel(): string {
     return { high: '✓ High confidence', medium: '~ Medium confidence', low: '! Low confidence' }[this.result.confidence];
   }
-  dvClass(pct: number): string { return pct <= 5 ? 'low' : pct <= 20 ? 'moderate' : 'high'; }
 }
