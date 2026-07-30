@@ -35,10 +35,12 @@
             "styles": [
               "src/styles.scss"
             ],
-            "scripts": [],
+            "scripts": [
+              "src/assets/tesseract/worker.min.js"
+            ],
             "allowedCommonJsDependencies": [
-              "tesseract.js",
-              "worker.min.js"
+              "src/assets/tesseract/tesseract.js",
+              "src/assets/tesseract/worker.min.js"
             ]
           },
           "configurations": {
