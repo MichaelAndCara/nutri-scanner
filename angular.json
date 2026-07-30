@@ -12,6 +12,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "baseHref": "/nutri-scanner/",
             "outputPath": "docs/nutri-scanner",
             "index": "src/index.html",
             "browser": "src/main.ts",
