@@ -8,10 +8,10 @@ import { NutritionResult, ScanState } from '../../models/nutrition.model';
 
 const OCR_STAGES = [
   { pct: 12, msg: 'Initializing OCR engine…' },
-  { pct: 30, msg: 'Loading language model…'  },
-  { pct: 52, msg: 'Scanning label text…'     },
-  { pct: 72, msg: 'Extracting nutrients…'    },
-  { pct: 88, msg: 'Parsing values…'          },
+  { pct: 30, msg: 'Loading language model…' },
+  { pct: 52, msg: 'Scanning label text…' },
+  { pct: 72, msg: 'Extracting nutrients…' },
+  { pct: 88, msg: 'Parsing values…' },
 ];
 
 @Component({
@@ -81,24 +81,24 @@ const OCR_STAGES = [
   styleUrl: './camera.component.scss'
 })
 export class CameraComponent implements OnDestroy {
-  @ViewChild('videoEl')  videoEl!:  ElementRef<HTMLVideoElement>;
+  @ViewChild('videoEl') videoEl!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasEl') canvasEl!: ElementRef<HTMLCanvasElement>;
   @Output() imageCaptured = new EventEmitter<NutritionResult>();
 
-  state       = signal<ScanState>({ status: 'idle' });
+  state = signal<ScanState>({ status: 'idle' });
   cameraActive = signal(false);
-  ocrMessage  = signal(OCR_STAGES[0].msg);
+  ocrMessage = signal(OCR_STAGES[0].msg);
   ocrProgress = signal(0);
 
-  private stream:        MediaStream | null = null;
-  private stageTimer:    ReturnType<typeof setInterval> | null = null;
+  private stream: MediaStream | null = null;
+  private stageTimer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private aiService: NutritionAiService) {}
+  constructor(private aiService: NutritionAiService) { }
 
   async startCamera(): Promise<void> {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }
       });
       this.state.set({ status: 'capturing' });
       setTimeout(() => {
@@ -111,14 +111,64 @@ export class CameraComponent implements OnDestroy {
   }
 
   capture(): void {
-    const video  = this.videoEl.nativeElement;
+    const video = this.videoEl.nativeElement;
     const canvas = this.canvasEl.nativeElement;
-    canvas.width  = video.videoWidth;
+    canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    canvas.getContext('2d')!.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+    const ctx = canvas.getContext('2d')!;
+    // Sharpen before handing to OCR: boost contrast + apply an unsharp-mask-style filter
+    ctx.filter = 'contrast(1.4) brightness(1.05) saturate(0)'; // greyscale + contrast lift
+    ctx.drawImage(video, 0, 0);
+    ctx.filter = 'none';
+
+    // Second pass: convolution sharpen kernel via ImageData
+    this.sharpenCanvas(ctx, canvas.width, canvas.height);
+
+    // PNG preserves every pixel; better than JPEG for text OCR
+    const dataUrl = canvas.toDataURL('image/png');
     this.stopCamera();
     this.analyze(dataUrl);
+
+    //   canvas.getContext('2d')!.drawImage(video, 0, 0);
+    //   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    //   this.stopCamera();
+    //   this.analyze(dataUrl);
+    // }
+  }
+
+  /**
+  * Applies a 3×3 unsharp-mask convolution directly to the pixel data.
+  * Noticeably improves Tesseract accuracy on curved / low-contrast labels.
+  */
+  private sharpenCanvas(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const src = new Uint8ClampedArray(imageData.data);
+    const dst = imageData.data;
+
+    // Sharpening kernel  (centre weight 5, cardinal neighbours -1)
+    //  [ 0  -1   0 ]
+    //  [-1   5  -1 ]
+    //  [ 0  -1   0 ]
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const i = (y * w + x) * 4;
+        const t = ((y - 1) * w + x) * 4;
+        const b = ((y + 1) * w + x) * 4;
+        const l = (y * w + (x - 1)) * 4;
+        const r = (y * w + (x + 1)) * 4;
+
+        for (let c = 0; c < 3; c++) {
+          dst[i + c] = Math.min(255, Math.max(0,
+            5 * src[i + c]
+            - src[t + c] - src[b + c]
+            - src[l + c] - src[r + c]
+          ));
+        }
+        dst[i + 3] = 255; // alpha
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
   }
 
   async onFileUpload(event: Event): Promise<void> {

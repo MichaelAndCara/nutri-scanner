@@ -156,7 +156,7 @@
 }
 
 .hi-lbl {
-  font-size: 10px;
+  font-size: 15px;
   color: rgba(240, 237, 232, .4);
   font-weight: 500;
 }
@@ -263,4 +263,10 @@
   border-radius: 6px;
   object-fit: cover;
   opacity: .6;
+}
+
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  /* Pushes items to opposite sides */
 }
