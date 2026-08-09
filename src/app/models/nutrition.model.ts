@@ -17,6 +17,6 @@ export interface NutritionResult {
 }
 
 export interface ScanState {
-  status: 'idle' | 'capturing' | 'analyzing' | 'done' | 'error';
+  status: 'idle' | 'capturing' | 'analyzing' | 'done' | 'error' | 'preview';
   error?: string;
 }

@@ -8,7 +8,7 @@
 .viewfinder {
   position: relative;
   width: 100%;
-  aspect-ratio: 2/3;
+  aspect-ratio: 4/3;
   background: #080810;
   overflow: hidden;
   display: flex;
@@ -65,7 +65,7 @@
 
 .scan-frame {
   width: 72%;
-  aspect-ratio: 2/3;
+  aspect-ratio: 3/2;
   position: relative;
 
   .c {
@@ -115,7 +115,8 @@
 }
 
 .analyzing-state,
-.error-state {
+.error-state,
+.focusing-state {
   position: absolute;
   inset: 0;
   display: flex;
@@ -135,6 +136,51 @@
   span {
     font-size: 34px;
   }
+}
+
+.focus-ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid #5de8a8;
+  animation: focus-pulse 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes focus-pulse {
+  from {
+    transform: scale(0.85);
+    opacity: 0.5;
+  }
+
+  to {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.preview-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.preview-badge {
+  position: absolute;
+  bottom: 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, .7);
+  background: rgba(0, 0, 0, .55);
+  padding: 4px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
 }
 
 .spinner {
